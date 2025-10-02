@@ -1,0 +1,481 @@
+-- LocalScript в StarterPlayerScripts
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Современный GUI с другим дизайном
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ModernKeyAuth"
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Основной контейнер с градиентом
+local mainContainer = Instance.new("Frame")
+mainContainer.Size = UDim2.new(0, 380, 0, 420)
+mainContainer.Position = UDim2.new(0.5, -190, 0.5, -210)
+mainContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+mainContainer.BackgroundTransparency = 0.05
+
+local containerCorner = Instance.new("UICorner")
+containerCorner.CornerRadius = UDim.new(0, 20)
+containerCorner.Parent = mainContainer
+
+-- Градиентный бордер
+local gradientBorder = Instance.new("Frame")
+gradientBorder.Size = UDim2.new(1, 4, 1, 4)
+gradientBorder.Position = UDim2.new(0, -2, 0, -2)
+gradientBorder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+gradientBorder.ZIndex = 0
+
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 200)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(100, 200, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 255, 100))
+})
+gradient.Rotation = 45
+gradient.Parent = gradientBorder
+
+local borderCorner = Instance.new("UICorner")
+borderCorner.CornerRadius = UDim.new(0, 22)
+borderCorner.Parent = gradientBorder
+
+-- Заголовок с иконкой
+local headerFrame = Instance.new("Frame")
+headerFrame.Size = UDim2.new(1, 0, 0, 80)
+headerFrame.Position = UDim2.new(0, 0, 0, 0)
+headerFrame.BackgroundTransparency = 1
+
+local icon = Instance.new("ImageLabel")
+icon.Size = UDim2.new(0, 50, 0, 50)
+icon.Position = UDim2.new(0.5, -25, 0, 10)
+icon.BackgroundTransparency = 1
+icon.Image = "rbxassetid://10734948220" -- Замените на свою иконку
+icon.Parent = headerFrame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 60)
+title.BackgroundTransparency = 1
+title.Text = "AUTHENTICATION"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 24
+title.Font = Enum.Font.GothamSemibold
+title.Parent = headerFrame
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, 0, 0, 20)
+subtitle.Position = UDim2.new(0, 0, 0, 90)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "Enter your access key"
+subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+subtitle.TextSize = 14
+subtitle.Font = Enum.Font.Gotham
+subtitle.Parent = headerFrame
+
+-- Поле ввода с современным дизайном
+local inputContainer = Instance.new("Frame")
+inputContainer.Size = UDim2.new(0, 320, 0, 70)
+inputContainer.Position = UDim2.new(0.5, -160, 0, 140)
+inputContainer.BackgroundTransparency = 1
+
+local inputLabel = Instance.new("TextLabel")
+inputLabel.Size = UDim2.new(1, 0, 0, 20)
+inputLabel.Position = UDim2.new(0, 0, 0, 0)
+inputLabel.BackgroundTransparency = 1
+inputLabel.Text = "ACCESS KEY"
+inputLabel.TextColor3 = Color3.fromRGB(150, 150, 200)
+inputLabel.TextSize = 12
+inputLabel.Font = Enum.Font.Gotham
+inputLabel.TextXAlignment = Enum.TextXAlignment.Left
+inputLabel.Parent = inputContainer
+
+local inputFrame = Instance.new("Frame")
+inputFrame.Size = UDim2.new(1, 0, 0, 45)
+inputFrame.Position = UDim2.new(0, 0, 0, 25)
+inputFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+inputFrame.BorderSizePixel = 0
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 10)
+inputCorner.Parent = inputFrame
+
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1, -20, 1, 0)
+inputBox.Position = UDim2.new(0, 10, 0, 0)
+inputBox.BackgroundTransparency = 1
+inputBox.Text = ""
+inputBox.PlaceholderText = "Enter your key..."
+inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputBox.TextSize = 16
+inputBox.Font = Enum.Font.Gotham
+inputBox.ClearTextOnFocus = false
+inputBox.Parent = inputFrame
+
+-- Кнопка проверки с современным дизайном
+local verifyButton = Instance.new("TextButton")
+verifyButton.Size = UDim2.new(0, 320, 0, 50)
+verifyButton.Position = UDim2.new(0.5, -160, 0, 230)
+verifyButton.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
+verifyButton.Text = "VERIFY ACCESS"
+verifyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+verifyButton.TextSize = 16
+verifyButton.Font = Enum.Font.GothamSemibold
+verifyButton.AutoButtonColor = false
+
+local verifyCorner = Instance.new("UICorner")
+verifyCorner.CornerRadius = UDim.new(0, 12)
+verifyCorner.Parent = verifyButton
+
+local verifyGradient = Instance.new("UIGradient")
+verifyGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 120, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 200, 255))
+})
+verifyGradient.Parent = verifyButton
+
+-- Кнопка получения ключа
+local getKeyButton = Instance.new("TextButton")
+getKeyButton.Size = UDim2.new(0, 320, 0, 40)
+getKeyButton.Position = UDim2.new(0.5, -160, 0, 300)
+getKeyButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+getKeyButton.Text = "GET ACCESS KEY"
+getKeyButton.TextColor3 = Color3.fromRGB(200, 200, 255)
+getKeyButton.TextSize = 14
+getKeyButton.Font = Enum.Font.Gotham
+getKeyButton.AutoButtonColor = false
+
+local getKeyCorner = Instance.new("UICorner")
+getKeyCorner.CornerRadius = UDim.new(0, 8)
+getKeyCorner.Parent = getKeyButton
+
+-- Кнопка закрытия
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -35, 0, 15)
+closeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+closeButton.Text = "×"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 20
+closeButton.Font = Enum.Font.GothamBold
+closeButton.AutoButtonColor = false
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeButton
+
+-- Статус бар
+local statusBar = Instance.new("Frame")
+statusBar.Size = UDim2.new(0, 0, 0, 3)
+statusBar.Position = UDim2.new(0, 0, 1, -3)
+statusBar.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
+statusBar.BorderSizePixel = 0
+statusBar.Visible = false
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 2)
+statusCorner.Parent = statusBar
+
+-- Контейнер для частиц
+local particlesContainer = Instance.new("Frame")
+particlesContainer.Size = UDim2.new(1, 0, 1, 0)
+particlesContainer.BackgroundTransparency = 1
+particlesContainer.ClipsDescendants = true
+
+-- Собираем интерфейс
+gradientBorder.Parent = mainContainer
+headerFrame.Parent = mainContainer
+inputContainer.Parent = mainContainer
+verifyButton.Parent = mainContainer
+getKeyButton.Parent = mainContainer
+closeButton.Parent = mainContainer
+statusBar.Parent = mainContainer
+particlesContainer.Parent = mainContainer
+mainContainer.Parent = screenGui
+screenGui.Parent = playerGui
+
+-- Состояние системы
+local state = {
+    scriptLoaded = false,
+    animationTime = 0,
+    isVerifying = false
+}
+
+-- Валидные ключи
+local validKeys = {
+    "PREMIUM2024",
+    "ACCESSGRANTED", 
+    "MASTERKEY",
+    "CHILLI",
+    "AUTHSUCCESS"
+}
+
+-- Анимации
+local function createPulseAnimation(object)
+    local pulseConnection
+    pulseConnection = RunService.Heartbeat:Connect(function(delta)
+        state.animationTime = state.animationTime + delta
+        local scale = 1 + math.sin(state.animationTime * 3) * 0.02
+        object.Size = UDim2.new(0, 320 * scale, 0, 50 * scale)
+        object.Position = UDim2.new(0.5, -160 * scale, 0, 230)
+    end)
+    return pulseConnection
+end
+
+local function createHoverEffect(button, normalColor, hoverColor)
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = normalColor}):Play()
+    end)
+end
+
+-- Создание частиц
+local function createFloatingParticle()
+    local particle = Instance.new("Frame")
+    particle.Size = UDim2.new(0, math.random(4, 8), 0, math.random(4, 8))
+    particle.Position = UDim2.new(0, math.random(-50, 400), 1, 10)
+    particle.BackgroundColor3 = Color3.fromRGB(
+        math.random(150, 255),
+        math.random(150, 255),
+        math.random(150, 255)
+    )
+    particle.BackgroundTransparency = 0.7
+    particle.BorderSizePixel = 0
+    particle.ZIndex = -1
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = particle
+    
+    particle.Parent = particlesContainer
+    
+    -- Анимация плавающей частицы
+    spawn(function()
+        local startX = particle.Position.X.Offset
+        local floatSpeed = math.random(20, 40)
+        local floatTime = 0
+        
+        while particle and particle.Parent do
+            floatTime = floatTime + 0.02
+            local newY = -10 - (floatTime * floatSpeed)
+            local newX = startX + math.sin(floatTime) * 30
+            
+            particle.Position = UDim2.new(0, newX, 0, newY)
+            particle.BackgroundTransparency = 0.7 + (newY + 10) / 400
+            
+            if newY < -400 then
+                particle:Destroy()
+                break
+            end
+            wait(0.02)
+        end
+    end)
+end
+
+-- Функция проверки ключа
+local function isValidKey(key)
+    for _, validKey in pairs(validKeys) do
+        if key:upper() == validKey then
+            return true
+        end
+    end
+    return false
+end
+
+-- Функция загрузки скрипта
+local function loadExternalScript()
+    if state.scriptLoaded then return true end
+    
+    local success, result = pcall(function()
+        local scriptUrl = "https://raw.githubusercontent.com/tienkhanh1/spicy/main/Chilli.lua"
+        local httpScript = game:HttpGet(scriptUrl)
+        loadstring(httpScript)()
+        return true
+    end)
+    
+    state.scriptLoaded = success
+    return success, result
+end
+
+-- Анимация статус бара
+local function showStatusBar(duration)
+    statusBar.Visible = true
+    statusBar.Size = UDim2.new(0, 0, 0, 3)
+    
+    local tween = TweenService:Create(statusBar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+        Size = UDim2.new(1, 0, 0, 3)
+    })
+    tween:Play()
+    
+    return tween
+end
+
+-- Анимация успешной проверки
+local function playSuccessAnimation()
+    -- Изменяем цвет градиента на успешный
+    local successGradient = Instance.new("UIGradient")
+    successGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 255, 150)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 255, 200))
+    })
+    successGradient.Rotation = 45
+    successGradient.Parent = gradientBorder
+    
+    -- Создаем эффект взрыва частиц
+    for i = 1, 30 do
+        spawn(function()
+            wait(math.random() * 0.5)
+            createFloatingParticle()
+        end)
+    end
+    
+    -- Анимация кнопки
+    verifyButton.Text = "ACCESS GRANTED ✓"
+    TweenService:Create(verifyButton, TweenInfo.new(0.3), {
+        BackgroundColor3 = Color3.fromRGB(100, 255, 150)
+    }):Play()
+end
+
+-- Обработчики событий
+verifyButton.MouseButton1Click:Connect(function()
+    if state.isVerifying then return end
+    
+    local key = inputBox.Text
+    if key == "" then
+        -- Анимация ошибки для поля ввода
+        local originalColor = inputFrame.BackgroundColor3
+        TweenService:Create(inputFrame, TweenInfo.new(0.1), {
+            BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+        }):Play()
+        wait(0.1)
+        TweenService:Create(inputFrame, TweenInfo.new(0.3), {
+            BackgroundColor3 = originalColor
+        }):Play()
+        return
+    end
+    
+    state.isVerifying = true
+    verifyButton.Text = "VERIFYING..."
+    
+    -- Показываем статус бар
+    local statusTween = showStatusBar(2)
+    
+    -- Имитация процесса проверки
+    spawn(function()
+        wait(2) -- Искусственная задержка для реалистичности
+        
+        if isValidKey(key) then
+            playSuccessAnimation()
+            
+            -- Загружаем скрипт
+            wait(1)
+            local success, errorMsg = loadExternalScript()
+            
+            if success then
+                verifyButton.Text = "SCRIPT LOADED ✓"
+                
+                -- Автозакрытие через 2 секунды
+                wait(2)
+                TweenService:Create(mainContainer, TweenInfo.new(0.5), {
+                    Size = UDim2.new(0, 0, 0, 0),
+                    Position = UDim2.new(0.5, 0, 0.5, 0)
+                }):Play()
+                
+                wait(0.5)
+                screenGui:Destroy()
+            else
+                verifyButton.Text = "LOAD FAILED ✗"
+                state.isVerifying = false
+            end
+        else
+            -- Анимация ошибки
+            statusBar.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+            verifyButton.Text = "INVALID KEY ✗"
+            
+            wait(1.5)
+            verifyButton.Text = "VERIFY ACCESS"
+            statusBar.Visible = false
+            state.isVerifying = false
+        end
+    end)
+end)
+
+getKeyButton.MouseButton1Click:Connect(function()
+    local discordLink = "https://discord.gg/your-server"
+    
+    if setclipboard then
+        setclipboard(discordLink)
+        getKeyButton.Text = "COPIED TO CLIPBOARD!"
+        
+        -- Визуальное подтверждение
+        TweenService:Create(getKeyButton, TweenInfo.new(0.3), {
+            BackgroundColor3 = Color3.fromRGB(100, 255, 150)
+        }):Play()
+        
+        wait(2)
+        getKeyButton.Text = "GET ACCESS KEY"
+        TweenService:Create(getKeyButton, TweenInfo.new(0.3), {
+            BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+        }):Play()
+    else
+        getKeyButton.Text = "CHECK NOTIFICATIONS!"
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Access Key",
+            Text = "Join: " .. discordLink,
+            Duration = 5
+        })
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    TweenService:Create(mainContainer, TweenInfo.new(0.4), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    }):Play()
+    
+    wait(0.4)
+    screenGui:Destroy()
+end)
+
+-- Эффекты при наведении
+createHoverEffect(verifyButton, Color3.fromRGB(80, 120, 255), Color3.fromRGB(100, 140, 275))
+createHoverEffect(getKeyButton, Color3.fromRGB(45, 45, 60), Color3.fromRGB(65, 65, 80))
+createHoverEffect(closeButton, Color3.fromRGB(45, 45, 60), Color3.fromRGB(65, 65, 80))
+
+-- Анимация появления
+mainContainer.Size = UDim2.new(0, 0, 0, 0)
+mainContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+wait(0.5)
+
+TweenService:Create(mainContainer, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 380, 0, 420),
+    Position = UDim2.new(0.5, -190, 0.5, -210)
+}):Play()
+
+-- Запускаем систему частиц
+spawn(function()
+    while screenGui and screenGui.Parent do
+        if math.random(1, 3) == 1 then
+            createFloatingParticle()
+        end
+        wait(0.3)
+    end
+end)
+
+-- Анимация градиента
+spawn(function()
+    while screenGui and screenGui.Parent do
+        state.animationTime = state.animationTime + 0.02
+        gradient.Rotation = gradient.Rotation + 0.5
+        wait(0.02)
+    end
+end)
+
+print("Modern Key Authentication System loaded!")
