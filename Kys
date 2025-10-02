@@ -407,7 +407,7 @@ verifyButton.MouseButton1Click:Connect(function()
 end)
 
 getKeyButton.MouseButton1Click:Connect(function()
-    local discordLink = "https://discord.gg/your-server"
+    local discordLink = "https://go.linkify.ru/2CQ2"
     
     if setclipboard then
         setclipboard(discordLink)
