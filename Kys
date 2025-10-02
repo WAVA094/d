@@ -206,7 +206,7 @@ local state = {
 
 -- Валидные ключи
 local validKeys = {
-    "PREMIUM2024",
+    "HOOOW",
     "ACCESSGRANTED", 
     "MASTERKEY",
     "CHILLI",
@@ -293,7 +293,7 @@ local function loadExternalScript()
     if state.scriptLoaded then return true end
     
     local success, result = pcall(function()
-        local scriptUrl = "https://raw.githubusercontent.com/tienkhanh1/spicy/main/Chilli.lua"
+        local scriptUrl = "https://raw.githubusercontent.com/WAVA094/d/refs/heads/main/Forsaken"
         local httpScript = game:HttpGet(scriptUrl)
         loadstring(httpScript)()
         return true
