@@ -1,0 +1,476 @@
+-- LocalScript в StarterPlayerScripts
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Создаем основной GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "KeySystem"
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Основной фрейм (уменьшенный размер)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 350, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -175, 0.5, -150)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+mainFrame.BackgroundTransparency = 0.1
+mainFrame.BorderSizePixel = 0
+
+-- Скругление углов
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = mainFrame
+
+-- Кнопка закрытия (крестик)
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -30, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 16
+closeButton.Font = Enum.Font.GothamBold
+closeButton.AutoButtonColor = false
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeButton
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -40, 0, 40)
+title.Position = UDim2.new(0, 20, 0, 10)
+title.BackgroundTransparency = 1
+title.Text = "KEY SYSTEM"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 22
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+-- Поле ввода
+local inputFrame = Instance.new("Frame")
+inputFrame.Size = UDim2.new(0, 280, 0, 40)
+inputFrame.Position = UDim2.new(0.5, -140, 0, 70)
+inputFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+inputFrame.BorderSizePixel = 0
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 6)
+inputCorner.Parent = inputFrame
+
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1, -20, 1, -10)
+inputBox.Position = UDim2.new(0, 10, 0, 5)
+inputBox.BackgroundTransparency = 1
+inputBox.Text = ""
+inputBox.PlaceholderText = "Enter key here..."
+inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputBox.TextSize = 16
+inputBox.Font = Enum.Font.Gotham
+inputBox.ClearTextOnFocus = false
+inputBox.Parent = inputFrame
+
+-- Кнопка Get Key
+local getKeyButton = Instance.new("TextButton")
+getKeyButton.Size = UDim2.new(0, 130, 0, 35)
+getKeyButton.Position = UDim2.new(0.5, -140, 0, 130)
+getKeyButton.BackgroundColor3 = Color3.fromRGB(50, 120, 255)
+getKeyButton.Text = "GET KEY"
+getKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+getKeyButton.TextSize = 16
+getKeyButton.Font = Enum.Font.GothamBold
+getKeyButton.AutoButtonColor = false
+
+local getKeyCorner = Instance.new("UICorner")
+getKeyCorner.CornerRadius = UDim.new(0, 6)
+getKeyCorner.Parent = getKeyButton
+
+-- Кнопка Check Key
+local checkKeyButton = Instance.new("TextButton")
+checkKeyButton.Size = UDim2.new(0, 130, 0, 35)
+checkKeyButton.Position = UDim2.new(0.5, 0, 0, 130)
+checkKeyButton.BackgroundColor3 = Color3.fromRGB(230, 80, 150)
+checkKeyButton.Text = "CHECK KEY"
+checkKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+checkKeyButton.TextSize = 16
+checkKeyButton.Font = Enum.Font.GothamBold
+checkKeyButton.AutoButtonColor = false
+
+local checkKeyCorner = Instance.new("UICorner")
+checkKeyCorner.CornerRadius = UDim.new(0, 6)
+checkKeyCorner.Parent = checkKeyButton
+
+-- Сообщения
+local messageLabel = Instance.new("TextLabel")
+messageLabel.Size = UDim2.new(1, -40, 0, 60)
+messageLabel.Position = UDim2.new(0, 20, 0, 190)
+messageLabel.BackgroundTransparency = 1
+messageLabel.Text = ""
+messageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+messageLabel.TextSize = 14
+messageLabel.Font = Enum.Font.Gotham
+messageLabel.TextWrapped = true
+messageLabel.Parent = mainFrame
+
+-- Частицы контейнер
+local particlesFolder = Instance.new("Folder")
+particlesFolder.Parent = mainFrame
+
+-- Собираем GUI
+closeButton.Parent = mainFrame
+getKeyButton.Parent = mainFrame
+checkKeyButton.Parent = mainFrame
+inputFrame.Parent = mainFrame
+mainFrame.Parent = screenGui
+screenGui.Parent = playerGui
+
+-- Переменная для отслеживания загруженного скрипта
+local scriptLoaded = false
+
+-- Анимации
+local function tweenColor(object, targetColor, duration)
+    local tweenInfo = TweenInfo.new(
+        duration,
+        Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out
+    )
+    local tween = TweenService:Create(object, tweenInfo, {BackgroundColor3 = targetColor})
+    tween:Play()
+    return tween
+end
+
+local function tweenTransparency(object, targetTransparency, duration)
+    local tweenInfo = TweenInfo.new(
+        duration,
+        Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out
+    )
+    local tween = TweenService:Create(object, tweenInfo, {BackgroundTransparency = targetTransparency})
+    tween:Play()
+    return tween
+end
+
+-- Создание частиц
+local function createParticle(x, y)
+    local particle = Instance.new("Frame")
+    particle.Size = UDim2.new(0, math.random(3, 6), 0, math.random(3, 6))
+    particle.Position = UDim2.new(0, x, 0, y)
+    particle.BackgroundColor3 = Color3.fromRGB(
+        math.random(200, 255),
+        math.random(200, 255),
+        math.random(200, 255)
+    )
+    particle.BorderSizePixel = 0
+    particle.ZIndex = -1
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = particle
+    
+    particle.Parent = particlesFolder
+    
+    -- Анимация частицы
+    spawn(function()
+        local speedX = (math.random() - 0.5) * 3
+        local speedY = (math.random() - 0.5) * 3
+        local life = 1
+        
+        while life > 0 do
+            local currentPos = particle.Position
+            particle.Position = UDim2.new(
+                0, currentPos.X.Offset + speedX,
+                0, currentPos.Y.Offset + speedY
+            )
+            
+            particle.BackgroundTransparency = 1 - life
+            
+            life = life - 0.03
+            wait(0.03)
+        end
+        
+        particle:Destroy()
+    end)
+end
+
+-- Создание взрыва частиц
+local function createParticleExplosion(x, y, count)
+    for i = 1, count do
+        createParticle(x, y)
+    end
+end
+
+-- Показать сообщение
+local function showMessage(text, color, duration)
+    messageLabel.Text = text
+    messageLabel.TextColor3 = color
+    
+    -- Анимация появления
+    messageLabel.TextTransparency = 1
+    local tween = TweenService:Create(messageLabel, TweenInfo.new(0.3), {TextTransparency = 0})
+    tween:Play()
+    
+    -- Автоскрытие
+    if duration then
+        delay(duration, function()
+            local tweenOut = TweenService:Create(messageLabel, TweenInfo.new(0.5), {TextTransparency = 1})
+            tweenOut:Play()
+        end)
+    end
+end
+
+-- Загрузка внешнего скрипта
+local function loadExternalScript()
+    if scriptLoaded then
+        showMessage("Script already loaded!", Color3.fromRGB(255, 255, 100), 2)
+        return true
+    end
+    
+    local success, result = pcall(function()
+        -- Загружаем и выполняем внешний скрипт
+        local scriptUrl = "https://raw.githubusercontent.com/WAVA094/d/refs/heads/main/Server%20finder"
+        local httpScript = game:HttpGet(scriptUrl)
+        loadstring(httpScript)()
+        return true
+    end)
+    
+    if success then
+        scriptLoaded = true
+        showMessage("✓ Script loaded successfully!", Color3.fromRGB(100, 255, 150), 3)
+        return true
+    else
+        showMessage("✗ Failed to load script: " .. tostring(result), Color3.fromRGB(255, 100, 100), 4)
+        return false
+    end
+end
+
+-- Проверка ключа
+local function checkKey(key)
+    local validKeys = {
+        "HOOOW",
+        "ROBLOX2024", 
+        "ACCESSGRANTED",
+        "SUPERKEY999",
+        "CHILLI"  -- Добавим специальный ключ для вашего скрипта
+    }
+    
+    for _, validKey in pairs(validKeys) do
+        if key:upper() == validKey then
+            return true
+        end
+    end
+    return false
+end
+
+-- Функция копирования в буфер обмена
+local function copyToClipboard(text)
+    local success, result = pcall(function()
+        if setclipboard then
+            setclipboard(text)
+            return true
+        else
+            -- Альтернативный метод для старых версий Roblox
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Key System",
+                Text = "Copy this: " .. text,
+                Duration = 5
+            })
+            return false
+        end
+    end)
+    
+    return success
+end
+
+-- Обработчики событий для кнопки закрытия
+closeButton.MouseEnter:Connect(function()
+    tweenColor(closeButton, Color3.fromRGB(255, 100, 100), 0.2)
+end)
+
+closeButton.MouseLeave:Connect(function()
+    tweenColor(closeButton, Color3.fromRGB(255, 80, 80), 0.2)
+end)
+
+closeButton.MouseButton1Down:Connect(function()
+    tweenColor(closeButton, Color3.fromRGB(255, 120, 120), 0.1)
+end)
+
+closeButton.MouseButton1Up:Connect(function()
+    -- Анимация закрытия
+    local tweenOut = TweenService:Create(mainFrame, TweenInfo.new(0.4), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    })
+    tweenOut:Play()
+    
+    tweenOut.Completed:Connect(function()
+        screenGui:Destroy()
+    end)
+end)
+
+-- Обработчики событий для Get Key
+getKeyButton.MouseEnter:Connect(function()
+    tweenColor(getKeyButton, Color3.fromRGB(70, 140, 255), 0.2)
+end)
+
+getKeyButton.MouseLeave:Connect(function()
+    tweenColor(getKeyButton, Color3.fromRGB(50, 120, 255), 0.2)
+end)
+
+getKeyButton.MouseButton1Down:Connect(function()
+    tweenColor(getKeyButton, Color3.fromRGB(30, 100, 235), 0.1)
+end)
+
+getKeyButton.MouseButton1Up:Connect(function()
+    tweenColor(getKeyButton, Color3.fromRGB(70, 140, 255), 0.1)
+    
+    -- Копируем ссылку в буфер обмена
+    local discordLink = "https://go.linkify.ru/2CQ2"
+    local copied = copyToClipboard(discordLink)
+    
+    if copied then
+        showMessage("✓ Discord link copied to clipboard!", Color3.fromRGB(100, 255, 150), 3)
+    else
+        showMessage("✓ Link ready to copy! Check notifications.", Color3.fromRGB(100, 255, 150), 3)
+    end
+    
+    -- Создаем взрыв частиц
+    createParticleExplosion(65, 147, 12)
+    
+    -- Уведомление
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Key System",
+        Text = " link copied!",
+        Duration = 3
+    })
+end)
+
+-- Обработчики событий для Check Key
+checkKeyButton.MouseEnter:Connect(function()
+    tweenColor(checkKeyButton, Color3.fromRGB(250, 100, 170), 0.2)
+end)
+
+checkKeyButton.MouseLeave:Connect(function()
+    tweenColor(checkKeyButton, Color3.fromRGB(230, 80, 150), 0.2)
+end)
+
+checkKeyButton.MouseButton1Down:Connect(function()
+    tweenColor(checkKeyButton, Color3.fromRGB(210, 60, 130), 0.1)
+end)
+
+checkKeyButton.MouseButton1Up:Connect(function()
+    tweenColor(checkKeyButton, Color3.fromRGB(250, 100, 170), 0.1)
+    
+    local key = inputBox.Text
+    if key == "" then
+        showMessage("Please enter a key first!", Color3.fromRGB(255, 100, 100), 2)
+        return
+    end
+    
+    local isValid = checkKey(key)
+    
+    if isValid then
+        showMessage("✓ Valid key! Loading script...", Color3.fromRGB(100, 255, 150), 2)
+        createParticleExplosion(235, 147, 15)
+        
+        -- Задержка для анимации перед загрузкой скрипта
+        wait(1.5)
+        
+        -- Пытаемся загрузить внешний скрипт
+        local loadSuccess = loadExternalScript()
+        
+        if loadSuccess then
+            showMessage("✓ Script loaded successfully! Enjoy!", Color3.fromRGB(100, 255, 150), 4)
+            
+            -- Дополнительные действия при успешной загрузке
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Success!",
+                Text = "Script loaded successfully!",
+                Duration = 5
+            })
+            
+            -- Автоматическое закрытие окна через 3 секунды
+            delay(3, function()
+                if screenGui and screenGui.Parent then
+                    local closeTween = TweenService:Create(mainFrame, TweenInfo.new(0.4), {
+                        Size = UDim2.new(0, 0, 0, 0),
+                        Position = UDim2.new(0.5, 0, 0.5, 0)
+                    })
+                    closeTween:Play()
+                    
+                    closeTween.Completed:Connect(function()
+                        screenGui:Destroy()
+                    end)
+                end
+            end)
+        else
+            showMessage("✗ Script loading failed! Try again.", Color3.fromRGB(255, 100, 100), 3)
+        end
+        
+    else
+        showMessage("✗ Invalid key! Please try again.", Color3.fromRGB(255, 100, 100), 3)
+        createParticleExplosion(235, 147, 10)
+    end
+end)
+
+-- Анимация поля ввода при фокусе
+inputBox.Focused:Connect(function()
+    tweenColor(inputFrame, Color3.fromRGB(60, 60, 80), 0.2)
+end)
+
+inputBox.FocusLost:Connect(function()
+    tweenColor(inputFrame, Color3.fromRGB(40, 40, 50), 0.2)
+end)
+
+-- Создаем фоновые частицы
+spawn(function()
+    while true do
+        if screenGui and screenGui.Parent and #particlesFolder:GetChildren() < 15 then
+            createParticle(
+                math.random(0, 350),
+                math.random(0, 300)
+            )
+        end
+        wait(0.15)
+    end
+end)
+
+-- Анимация появления GUI
+mainFrame.Size = UDim2.new(0, 0, 0, 0)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+closeButton.BackgroundTransparency = 1
+closeButton.TextTransparency = 1
+title.TextTransparency = 1
+inputFrame.BackgroundTransparency = 1
+inputBox.TextTransparency = 1
+getKeyButton.BackgroundTransparency = 1
+getKeyButton.TextTransparency = 1
+checkKeyButton.BackgroundTransparency = 1
+checkKeyButton.TextTransparency = 1
+
+wait(0.5)
+
+-- Плавное появление
+local openTween = TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 350, 0, 300),
+    Position = UDim2.new(0.5, -175, 0.5, -150)
+})
+openTween:Play()
+
+wait(0.2)
+TweenService:Create(closeButton, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
+TweenService:Create(closeButton, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+TweenService:Create(title, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+wait(0.1)
+TweenService:Create(inputFrame, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
+TweenService:Create(inputBox, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+wait(0.1)
+TweenService:Create(getKeyButton, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
+TweenService:Create(getKeyButton, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+TweenService:Create(checkKeyButton, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
+TweenService:Create(checkKeyButton, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+
+print("Key System loaded successfully!")
