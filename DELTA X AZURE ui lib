@@ -74,10 +74,10 @@ end
 
 -- Основное окно
 function DeltaXAzure:CreateWindow(title)
-    local mainWindow = self:CreateFrame(ScreenGui, UDim2.new(0, 400, 0, 450), UDim2.new(0.5, -200, 0.5, -225))
+    local mainWindow = self:CreateFrame(ScreenGui, UDim2.new(0, 350, 0, 400), UDim2.new(0.5, -175, 0.5, -200))
     
-    -- Title Bar
-    local titleBar = self:CreateFrame(mainWindow, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 0), self.Theme.SecondaryColor)
+    -- Title Bar (для перетаскивания)
+    local titleBar = self:CreateFrame(mainWindow, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), self.Theme.SecondaryColor)
     local titleLabel = self:CreateLabel(titleBar, title, UDim2.new(1, -40, 1, 0), UDim2.new(0, 10, 0, 0), 16)
     
     -- Close Button
@@ -98,21 +98,59 @@ function DeltaXAzure:CreateWindow(title)
         mainWindow:Destroy()
     end)
     
+    -- Перетаскивание окна
+    local dragging = false
+    local dragInput, dragStart, startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        mainWindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainWindow.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    titleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+    
     -- Content Area
-    local content = self:CreateFrame(mainWindow, UDim2.new(1, -20, 1, -50), UDim2.new(0, 10, 0, 40), self.Theme.MainColor, 1)
+    local content = self:CreateFrame(mainWindow, UDim2.new(1, -20, 1, -45), UDim2.new(0, 10, 0, 35), self.Theme.MainColor, 1)
     
     -- Tab System
     local tabs = {}
     local currentTab = nil
+    local tabCount = 0
     
     function tabs:CreateTab(name)
+        tabCount = tabCount + 1
+        
         local tabButton = self:Create("TextButton", {
-            Size = UDim2.new(0, 80, 0, 25),
-            Position = UDim2.new(0, (#tabs - 1) * 85 + 10, 0, 5),
+            Size = UDim2.new(0, 70, 0, 25),
+            Position = UDim2.new(0, (tabCount - 1) * 75 + 10, 0, 5),
             BackgroundColor3 = self.Theme.SecondaryColor,
             Text = name,
             TextColor3 = self.Theme.DarkText,
-            TextSize = 13,
+            TextSize = 12,
             Font = self.Theme.Font,
             Parent = content
         })
@@ -122,38 +160,13 @@ function DeltaXAzure:CreateWindow(title)
         local tabContent = self:CreateFrame(content, UDim2.new(1, 0, 1, -35), UDim2.new(0, 0, 0, 35), self.Theme.MainColor, 1)
         tabContent.Visible = false
         
-        tabButton.MouseButton1Click:Connect(function()
-            if currentTab then
-                currentTab.Visible = false
-            end
-            tabContent.Visible = true
-            currentTab = tabContent
-            
-            -- Update tab colors
-            for _, btn in pairs(content:GetChildren()) do
-                if btn:IsA("TextButton") then
-                    btn.BackgroundColor3 = self.Theme.SecondaryColor
-                    btn.TextColor3 = self.Theme.DarkText
-                end
-            end
-            tabButton.BackgroundColor3 = self.Theme.AccentColor
-            tabButton.TextColor3 = self.Theme.TextColor
-        end)
-        
-        -- Set first tab as active
-        if not currentTab then
-            tabButton.BackgroundColor3 = self.Theme.AccentColor
-            tabButton.TextColor3 = self.Theme.TextColor
-            tabContent.Visible = true
-            currentTab = tabContent
-        end
-        
         local tabElements = {}
         
         function tabElements:Button(text, callback)
+            local elementCount = #tabContent:GetChildren()
             local button = self:Create("TextButton", {
                 Size = UDim2.new(1, -20, 0, 35),
-                Position = UDim2.new(0, 10, 0, #tabContent:GetChildren() * 45 + 10),
+                Position = UDim2.new(0, 10, 0, elementCount * 45 + 10),
                 BackgroundColor3 = self.Theme.AccentColor,
                 Text = text,
                 TextColor3 = self.Theme.TextColor,
@@ -164,15 +177,12 @@ function DeltaXAzure:CreateWindow(title)
             
             self:Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = button})
             
-            local hoverTween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20, 130, 235)})            
-            local leaveTween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.AccentColor})
-            
             button.MouseEnter:Connect(function()
-                hoverTween:Play()
+                TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20, 130, 235)}):Play()
             end)
             
             button.MouseLeave:Connect(function()
-                leaveTween:Play()
+                TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.AccentColor}):Play()
             end)
             
             button.MouseButton1Click:Connect(function()
@@ -185,7 +195,8 @@ function DeltaXAzure:CreateWindow(title)
         end
         
         function tabElements:Toggle(text, default, callback)
-            local toggleFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 30), UDim2.new(0, 10, 0, #tabContent:GetChildren() * 40 + 10), self.Theme.SecondaryColor)
+            local elementCount = #tabContent:GetChildren()
+            local toggleFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 30), UDim2.new(0, 10, 0, elementCount * 40 + 10), self.Theme.SecondaryColor)
             
             local toggleLabel = self:CreateLabel(toggleFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0))
             
@@ -228,7 +239,8 @@ function DeltaXAzure:CreateWindow(title)
         end
         
         function tabElements:Slider(text, min, max, default, callback)
-            local sliderFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 50), UDim2.new(0, 10, 0, #tabContent:GetChildren() * 55 + 10), self.Theme.SecondaryColor)
+            local elementCount = #tabContent:GetChildren()
+            local sliderFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 50), UDim2.new(0, 10, 0, elementCount * 55 + 10), self.Theme.SecondaryColor)
             
             local sliderLabel = self:CreateLabel(sliderFrame, text, UDim2.new(0.6, 0, 0, 20), UDim2.new(0, 10, 0, 5))
             
@@ -308,7 +320,8 @@ function DeltaXAzure:CreateWindow(title)
         end
         
         function tabElements:Dropdown(text, options, callback)
-            local dropdownFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 35), UDim2.new(0, 10, 0, #tabContent:GetChildren() * 45 + 10), self.Theme.SecondaryColor)
+            local elementCount = #tabContent:GetChildren()
+            local dropdownFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 35), UDim2.new(0, 10, 0, elementCount * 45 + 10), self.Theme.SecondaryColor)
             dropdownFrame.ClipsDescendants = true
             
             local dropdownLabel = self:CreateLabel(dropdownFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0))
@@ -382,9 +395,37 @@ function DeltaXAzure:CreateWindow(title)
         end
         
         function tabElements:Label(text)
-            local label = self:CreateLabel(tabContent, text, UDim2.new(1, -20, 0, 20), UDim2.new(0, 10, 0, #tabContent:GetChildren() * 30 + 10))
+            local elementCount = #tabContent:GetChildren()
+            local label = self:CreateLabel(tabContent, text, UDim2.new(1, -20, 0, 20), UDim2.new(0, 10, 0, elementCount * 30 + 10))
             label.TextXAlignment = Enum.TextXAlignment.Center
             return label
+        end
+        
+        -- Обработчик клика по вкладке
+        tabButton.MouseButton1Click:Connect(function()
+            if currentTab then
+                currentTab.Visible = false
+            end
+            tabContent.Visible = true
+            currentTab = tabContent
+            
+            -- Обновление цветов вкладок
+            for _, btn in pairs(content:GetChildren()) do
+                if btn:IsA("TextButton") and btn ~= tabButton then
+                    btn.BackgroundColor3 = self.Theme.SecondaryColor
+                    btn.TextColor3 = self.Theme.DarkText
+                end
+            end
+            tabButton.BackgroundColor3 = self.Theme.AccentColor
+            tabButton.TextColor3 = self.Theme.TextColor
+        end)
+        
+        -- Установка первой вкладки как активной
+        if not currentTab then
+            tabButton.BackgroundColor3 = self.Theme.AccentColor
+            tabButton.TextColor3 = self.Theme.TextColor
+            tabContent.Visible = true
+            currentTab = tabContent
         end
         
         return tabElements
@@ -395,19 +436,19 @@ end
 
 -- Telegram Invite функция
 function DeltaXAzure:TelegramInvite(inviteLink, buttonText)
-    local frame = self:CreateFrame(ScreenGui, UDim2.new(0, 300, 0, 60), UDim2.new(1, -320, 1, -80), Color3.fromRGB(0, 136, 204))
+    local frame = self:CreateFrame(ScreenGui, UDim2.new(0, 280, 0, 50), UDim2.new(1, -300, 1, -70), Color3.fromRGB(0, 136, 204))
     
-    local icon = self:CreateLabel(frame, "✈", UDim2.new(0, 40, 1, 0), UDim2.new(0, 10, 0, 0), 20)
+    local icon = self:CreateLabel(frame, "✈", UDim2.new(0, 30, 1, 0), UDim2.new(0, 10, 0, 0), 18)
     
-    local textLabel = self:CreateLabel(frame, "Join our Telegram", UDim2.new(0.6, 0, 1, 0), UDim2.new(0, 45, 0, 0), 14)
+    local textLabel = self:CreateLabel(frame, "Join Telegram", UDim2.new(0.5, 0, 1, 0), UDim2.new(0, 35, 0, 0), 12)
     
     local joinButton = self:Create("TextButton", {
-        Size = UDim2.new(0, 100, 0, 30),
-        Position = UDim2.new(0.8, -110, 0.5, -15),
+        Size = UDim2.new(0, 80, 0, 25),
+        Position = UDim2.new(0.8, -90, 0.5, -12),
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         Text = buttonText or "Join",
         TextColor3 = Color3.fromRGB(0, 136, 204),
-        TextSize = 14,
+        TextSize = 12,
         Font = self.Theme.Font,
         Parent = frame
     })
@@ -429,12 +470,12 @@ end
 function DeltaXAzure:Notify(title, message, duration)
     duration = duration or 5
     
-    local notifyFrame = self:CreateFrame(ScreenGui, UDim2.new(0, 300, 0, 80), UDim2.new(1, -320, 0, 20), self.Theme.MainColor)
+    local notifyFrame = self:CreateFrame(ScreenGui, UDim2.new(0, 280, 0, 70), UDim2.new(1, -300, 0, 20), self.Theme.MainColor)
     
-    local titleLabel = self:CreateLabel(notifyFrame, title, UDim2.new(1, -20, 0, 25), UDim2.new(0, 10, 0, 10), 16)
+    local titleLabel = self:CreateLabel(notifyFrame, title, UDim2.new(1, -20, 0, 25), UDim2.new(0, 10, 0, 10), 14)
     titleLabel.Font = Enum.Font.GothamBold
     
-    local messageLabel = self:CreateLabel(notifyFrame, message, UDim2.new(1, -20, 0, 40), UDim2.new(0, 10, 0, 35), 14)
+    local messageLabel = self:CreateLabel(notifyFrame, message, UDim2.new(1, -20, 0, 35), UDim2.new(0, 10, 0, 30), 12)
     
     -- Автоматическое закрытие
     delay(duration, function()
