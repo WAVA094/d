@@ -1,0 +1,324 @@
+-- UI Lib for Roblox
+local UILib = {}
+
+-- Сервисы
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+-- Локальный игрок
+local player = Players.LocalPlayer
+local gui = player:WaitForChild("PlayerGui")
+
+-- Создание основного экрана
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "UILib"
+screenGui.Parent = gui
+
+-- Стили по умолчанию
+UILib.Theme = {
+    PrimaryColor = Color3.fromRGB(0, 120, 215),
+    SecondaryColor = Color3.fromRGB(40, 40, 40),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    AccentColor = Color3.fromRGB(0, 200, 83),
+    Font = Enum.Font.Gotham,
+    CornerRadius = UDim.new(0, 6)
+}
+
+-- Вспомогательные функции
+function UILib:CreateFrame(parent, size, position, color, transparency)
+    local frame = Instance.new("Frame")
+    frame.BackgroundColor3 = color or UILib.Theme.SecondaryColor
+    frame.BackgroundTransparency = transparency or 0
+    frame.Size = size
+    frame.Position = position or UDim2.new(0, 0, 0, 0)
+    frame.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UILib.Theme.CornerRadius
+    corner.Parent = frame
+    
+    return frame
+end
+
+function UILib:CreateTextLabel(parent, text, size, position)
+    local label = Instance.new("TextLabel")
+    label.Text = text
+    label.TextColor3 = UILib.Theme.TextColor
+    label.BackgroundTransparency = 1
+    label.Size = size
+    label.Position = position
+    label.Font = UILib.Theme.Font
+    label.TextSize = 14
+    label.Parent = parent
+    
+    return label
+end
+
+-- Кнопка
+function UILib:CreateButton(parent, text, size, position, callback)
+    local buttonFrame = self:CreateFrame(parent, size, position, UILib.Theme.PrimaryColor)
+    buttonFrame.Name = "Button"
+    
+    local buttonLabel = self:CreateTextLabel(buttonFrame, text, UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0))
+    buttonLabel.Text = text
+    
+    -- Анимация наведения
+    local function hoverAnimation(isHovering)
+        local tweenInfo = TweenInfo.new(0.2)
+        local goal = {}
+        
+        if isHovering then
+            goal.BackgroundColor3 = Color3.fromRGB(
+                math.min(UILib.Theme.PrimaryColor.R * 255 + 20, 255),
+                math.min(UILib.Theme.PrimaryColor.G * 255 + 20, 255),
+                math.min(UILib.Theme.PrimaryColor.B * 255 + 20, 255)
+            )
+        else
+            goal.BackgroundColor3 = UILib.Theme.PrimaryColor
+        end
+        
+        local tween = TweenService:Create(buttonFrame, tweenInfo, goal)
+        tween:Play()
+    end
+    
+    -- Обработчики событий
+    buttonFrame.MouseEnter:Connect(function()
+        hoverAnimation(true)
+    end)
+    
+    buttonFrame.MouseLeave:Connect(function()
+        hoverAnimation(false)
+    end)
+    
+    buttonFrame.MouseButton1Click:Connect(function()
+        if callback then
+            callback()
+        end
+    end)
+    
+    return buttonFrame
+end
+
+-- Переключатель (Toggle)
+function UILib:CreateToggle(parent, text, size, position, defaultState, callback)
+    local toggleFrame = self:CreateFrame(parent, size, position, UILib.Theme.SecondaryColor)
+    toggleFrame.Name = "Toggle"
+    
+    local toggleLabel = self:CreateTextLabel(toggleFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0))
+    toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local toggleSwitch = self:CreateFrame(toggleFrame, UDim2.new(0, 40, 0, 20), UDim2.new(0.85, 0, 0.5, -10), UILib.Theme.SecondaryColor)
+    toggleSwitch.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    
+    local toggleDot = self:CreateFrame(toggleSwitch, UDim2.new(0, 16, 0, 16), UDim2.new(0, 2, 0, 2), UILib.Theme.TextColor)
+    
+    local isToggled = defaultState or false
+    
+    local function updateToggle()
+        local tweenInfo = TweenInfo.new(0.2)
+        
+        if isToggled then
+            -- Включено
+            local dotTween = TweenService:Create(toggleDot, tweenInfo, {Position = UDim2.new(0, 22, 0, 2)})
+            local switchTween = TweenService:Create(toggleSwitch, tweenInfo, {BackgroundColor3 = UILib.Theme.AccentColor})
+            dotTween:Play()
+            switchTween:Play()
+        else
+            -- Выключено
+            local dotTween = TweenService:Create(toggleDot, tweenInfo, {Position = UDim2.new(0, 2, 0, 2)})
+            local switchTween = TweenService:Create(toggleSwitch, tweenInfo, {BackgroundColor3 = Color3.fromRGB(80, 80, 80)})
+            dotTween:Play()
+            switchTween:Play()
+        end
+    end
+    
+    toggleFrame.MouseButton1Click:Connect(function()
+        isToggled = not isToggled
+        updateToggle()
+        if callback then
+            callback(isToggled)
+        end
+    end)
+    
+    updateToggle()
+    
+    return toggleFrame
+end
+
+-- Выпадающий список (Dropdown)
+function UILib:CreateDropdown(parent, text, size, position, options, callback)
+    local dropdownFrame = self:CreateFrame(parent, size, position, UILib.Theme.SecondaryColor)
+    dropdownFrame.Name = "Dropdown"
+    dropdownFrame.ClipsDescendants = true
+    
+    local dropdownLabel = self:CreateTextLabel(dropdownFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0))
+    dropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local dropdownArrow = self:CreateTextLabel(dropdownFrame, "▼", UDim2.new(0, 20, 0, 20), UDim2.new(0.9, -25, 0.5, -10))
+    dropdownArrow.TextSize = 12
+    
+    local optionsFrame = self:CreateFrame(dropdownFrame, UDim2.new(1, 0, 0, 0), UDim2.new(0, 0, 1, 5), UILib.Theme.SecondaryColor)
+    optionsFrame.Visible = false
+    
+    local isOpen = false
+    local selectedOption = nil
+    
+    local function toggleDropdown()
+        isOpen = not isOpen
+        local tweenInfo = TweenInfo.new(0.3)
+        
+        if isOpen then
+            optionsFrame.Visible = true
+            local tween = TweenService:Create(optionsFrame, tweenInfo, {Size = UDim2.new(1, 0, 0, #options * 30)})
+            tween:Play()
+            dropdownArrow.Text = "▲"
+        else
+            local tween = TweenService:Create(optionsFrame, tweenInfo, {Size = UDim2.new(1, 0, 0, 0)})
+            tween:Play()
+            wait(0.3)
+            optionsFrame.Visible = false
+            dropdownArrow.Text = "▼"
+        end
+    end
+    
+    -- Создание опций
+    for i, option in ipairs(options) do
+        local optionButton = self:CreateFrame(optionsFrame, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, (i-1)*30 + 5), UILib.Theme.PrimaryColor)
+        optionButton.BackgroundTransparency = 0.8
+        
+        local optionLabel = self:CreateTextLabel(optionButton, option, UDim2.new(1, 0, 1, 0), UDim2.new(0, 5, 0, 0))
+        optionLabel.TextXAlignment = Enum.TextXAlignment.Left
+        
+        optionButton.MouseButton1Click:Connect(function()
+            selectedOption = option
+            dropdownLabel.Text = text .. ": " .. option
+            toggleDropdown()
+            if callback then
+                callback(option)
+            end
+        end)
+    end
+    
+    dropdownFrame.MouseButton1Click:toggleDropdown
+    
+    return dropdownFrame
+end
+
+-- Слайдер
+function UILib:CreateSlider(parent, text, size, position, minValue, maxValue, defaultValue, callback)
+    local sliderFrame = self:CreateFrame(parent, size, position, UILib.Theme.SecondaryColor)
+    sliderFrame.Name = "Slider"
+    
+    local sliderLabel = self:CreateTextLabel(sliderFrame, text, UDim2.new(1, -10, 0, 20), UDim2.new(0, 10, 0, 0))
+    sliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local valueLabel = self:CreateTextLabel(sliderFrame, tostring(defaultValue), UDim2.new(0, 50, 0, 20), UDim2.new(1, -60, 0, 0))
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    
+    local track = self:CreateFrame(sliderFrame, UDim2.new(1, -20, 0, 6), UDim2.new(0, 10, 0, 30), Color3.fromRGB(80, 80, 80))
+    
+    local fill = self:CreateFrame(track, UDim2.new(0, 0, 1, 0), UDim2.new(0, 0, 0, 0), UILib.Theme.PrimaryColor)
+    fill.CornerRadius = UDim.new(1, 0)
+    
+    local handle = self:CreateFrame(track, UDim2.new(0, 16, 0, 16), UDim2.new(0, -8, 0.5, -8), UILib.Theme.TextColor)
+    handle.CornerRadius = UDim.new(1, 0)
+    
+    local isDragging = false
+    local currentValue = defaultValue or minValue
+    
+    local function updateSlider(value)
+        local normalized = (value - minValue) / (maxValue - minValue)
+        local fillSize = normalized * track.AbsoluteSize.X
+        
+        fill.Size = UDim2.new(0, fillSize, 1, 0)
+        handle.Position = UDim2.new(0, fillSize - 8, 0.5, -8)
+        valueLabel.Text = tostring(math.floor(value))
+        currentValue = value
+        
+        if callback then
+            callback(value)
+        end
+    end
+    
+    local function onInput(input)
+        if isDragging then
+            local relativeX = input.Position.X - track.AbsolutePosition.X
+            local normalized = math.clamp(relativeX / track.AbsoluteSize.X, 0, 1)
+            local value = minValue + normalized * (maxValue - minValue)
+            updateSlider(value)
+        end
+    end
+    
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+        end
+    end)
+    
+    handle.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = false
+        end
+    end)
+    
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+            onInput(input)
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement and isDragging then
+            onInput(input)
+        end
+    end)
+    
+    updateSlider(currentValue)
+    
+    return sliderFrame
+end
+
+-- Telegram Invite
+function UILib:CreateTelegramInvite(parent, size, position, inviteLink, buttonText)
+    local telegramFrame = self:CreateFrame(parent, size, position, Color3.fromRGB(0, 136, 204))
+    
+    local icon = self:CreateTextLabel(telegramFrame, "✈", UDim2.new(0, 30, 1, 0), UDim2.new(0, 10, 0, 0))
+    icon.TextSize = 20
+    
+    local textLabel = self:CreateTextLabel(telegramFrame, "Присоединяйтесь к нашему Telegram", UDim2.new(0.6, 0, 1, 0), UDim2.new(0, 45, 0, 0))
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local joinButton = self:CreateButton(telegramFrame, buttonText or "Присоединиться", UDim2.new(0, 100, 0, 25), UDim2.new(0.8, -110, 0.5, -12), function()
+        if inviteLink then
+            -- Открытие ссылки (в Roblox Studio это не сработает, но в игре будет работать)
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("OpenBrowserWindow", {
+                    URL = inviteLink
+                })
+            end)
+        end
+    end)
+    
+    return telegramFrame
+end
+
+-- Функция для создания окна
+function UILib:CreateWindow(title, size, position)
+    local window = self:CreateFrame(screenGui, size, position, UILib.Theme.SecondaryColor)
+    window.Name = "Window"
+    
+    local titleBar = self:CreateFrame(window, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), UILib.Theme.PrimaryColor)
+    titleBar.CornerRadius = UDim.new(0, 6)
+    
+    local titleLabel = self:CreateTextLabel(titleBar, title, UDim2.new(1, 0, 1, 0), UDim2.new(0, 10, 0, 0))
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local content = self:CreateFrame(window, UDim2.new(1, -20, 1, -50), UDim2.new(0, 10, 0, 40), UILib.Theme.SecondaryColor)
+    content.BackgroundTransparency = 1
+    
+    return content
+end
+
+return UILib
