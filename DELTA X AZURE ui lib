@@ -1,302 +1,449 @@
--- UI Lib for Roblox
-local UILib = {}
+-- DELTA X AZURE UI LIB
+-- GitHub: https://github.com/WAVA094/d
+
+local DeltaXAzure = {}
 
 -- Сервисы
-local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 -- Локальный игрок
 local player = Players.LocalPlayer
 local gui = player:WaitForChild("PlayerGui")
 
--- Создание основного экрана
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "UILib"
-screenGui.Parent = gui
+-- Основной ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DeltaXAzureUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = gui
 
--- Стили по умолчанию
-UILib.Theme = {
-    PrimaryColor = Color3.fromRGB(0, 120, 215),
-    SecondaryColor = Color3.fromRGB(40, 40, 40),
+-- Тема
+DeltaXAzure.Theme = {
+    MainColor = Color3.fromRGB(25, 25, 35),
+    SecondaryColor = Color3.fromRGB(35, 35, 45),
+    AccentColor = Color3.fromRGB(0, 150, 255),
     TextColor = Color3.fromRGB(255, 255, 255),
-    AccentColor = Color3.fromRGB(0, 200, 83),
+    DarkText = Color3.fromRGB(180, 180, 180),
     Font = Enum.Font.Gotham,
-    CornerRadius = UDim.new(0, 6)
+    CornerRadius = UDim.new(0, 4)
 }
 
 -- Вспомогательные функции
-function UILib:CreateFrame(parent, size, position, color, transparency)
-    local frame = Instance.new("Frame")
-    frame.BackgroundColor3 = color or UILib.Theme.SecondaryColor
-    frame.BackgroundTransparency = transparency or 0
-    frame.Size = size
-    frame.Position = position or UDim2.new(0, 0, 0, 0)
-    frame.Parent = parent
+function DeltaXAzure:Create(class, properties)
+    local obj = Instance.new(class)
+    for prop, value in pairs(properties) do
+        obj[prop] = value
+    end
+    return obj
+end
+
+function DeltaXAzure:CreateFrame(parent, size, position, color, transparency)
+    local frame = self:Create("Frame", {
+        BackgroundColor3 = color or self.Theme.MainColor,
+        BackgroundTransparency = transparency or 0,
+        Size = size,
+        Position = position,
+        Parent = parent
+    })
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UILib.Theme.CornerRadius
-    corner.Parent = frame
+    local corner = self:Create("UICorner", {
+        CornerRadius = self.Theme.CornerRadius,
+        Parent = frame
+    })
     
     return frame
 end
 
-function UILib:CreateTextLabel(parent, text, size, position)
-    local label = Instance.new("TextLabel")
-    label.Text = text
-    label.TextColor3 = UILib.Theme.TextColor
-    label.BackgroundTransparency = 1
-    label.Size = size
-    label.Position = position
-    label.Font = UILib.Theme.Font
-    label.TextSize = 14
-    label.Parent = parent
+function DeltaXAzure:CreateLabel(parent, text, size, position, textSize)
+    local label = self:Create("TextLabel", {
+        Text = text,
+        TextColor3 = self.Theme.TextColor,
+        BackgroundTransparency = 1,
+        Size = size,
+        Position = position,
+        Font = self.Theme.Font,
+        TextSize = textSize or 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = parent
+    })
     
     return label
 end
 
--- Кнопка
-function UILib:CreateButton(parent, text, size, position, callback)
-    local buttonFrame = self:CreateFrame(parent, size, position, UILib.Theme.PrimaryColor)
-    buttonFrame.Name = "Button"
+-- Основное окно
+function DeltaXAzure:CreateWindow(title)
+    local mainWindow = self:CreateFrame(ScreenGui, UDim2.new(0, 400, 0, 450), UDim2.new(0.5, -200, 0.5, -225))
     
-    local buttonLabel = self:CreateTextLabel(buttonFrame, text, UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0))
-    buttonLabel.Text = text
+    -- Title Bar
+    local titleBar = self:CreateFrame(mainWindow, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 0), self.Theme.SecondaryColor)
+    local titleLabel = self:CreateLabel(titleBar, title, UDim2.new(1, -40, 1, 0), UDim2.new(0, 10, 0, 0), 16)
     
-    -- Анимация наведения
-    local function hoverAnimation(isHovering)
-        local tweenInfo = TweenInfo.new(0.2)
-        local goal = {}
-        
-        if isHovering then
-            goal.BackgroundColor3 = Color3.fromRGB(
-                math.min(UILib.Theme.PrimaryColor.R * 255 + 20, 255),
-                math.min(UILib.Theme.PrimaryColor.G * 255 + 20, 255),
-                math.min(UILib.Theme.PrimaryColor.B * 255 + 20, 255)
-            )
-        else
-            goal.BackgroundColor3 = UILib.Theme.PrimaryColor
-        end
-        
-        local tween = TweenService:Create(buttonFrame, tweenInfo, goal)
-        tween:Play()
-    end
+    -- Close Button
+    local closeBtn = self:Create("TextButton", {
+        Size = UDim2.new(0, 25, 0, 25),
+        Position = UDim2.new(1, -30, 0.5, -12),
+        BackgroundColor3 = Color3.fromRGB(255, 60, 60),
+        Text = "×",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 18,
+        Font = Enum.Font.GothamBold,
+        Parent = titleBar
+    })
     
-    -- Обработчики событий
-    buttonFrame.MouseEnter:Connect(function()
-        hoverAnimation(true)
+    self:Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = closeBtn})
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        mainWindow:Destroy()
     end)
     
-    buttonFrame.MouseLeave:Connect(function()
-        hoverAnimation(false)
-    end)
+    -- Content Area
+    local content = self:CreateFrame(mainWindow, UDim2.new(1, -20, 1, -50), UDim2.new(0, 10, 0, 40), self.Theme.MainColor, 1)
     
-    buttonFrame.MouseButton1Click:Connect(function()
-        if callback then
-            callback()
-        end
-    end)
+    -- Tab System
+    local tabs = {}
+    local currentTab = nil
     
-    return buttonFrame
-end
-
--- Переключатель (Toggle)
-function UILib:CreateToggle(parent, text, size, position, defaultState, callback)
-    local toggleFrame = self:CreateFrame(parent, size, position, UILib.Theme.SecondaryColor)
-    toggleFrame.Name = "Toggle"
-    
-    local toggleLabel = self:CreateTextLabel(toggleFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0))
-    toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local toggleSwitch = self:CreateFrame(toggleFrame, UDim2.new(0, 40, 0, 20), UDim2.new(0.85, 0, 0.5, -10), UILib.Theme.SecondaryColor)
-    toggleSwitch.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    
-    local toggleDot = self:CreateFrame(toggleSwitch, UDim2.new(0, 16, 0, 16), UDim2.new(0, 2, 0, 2), UILib.Theme.TextColor)
-    
-    local isToggled = defaultState or false
-    
-    local function updateToggle()
-        local tweenInfo = TweenInfo.new(0.2)
+    function tabs:CreateTab(name)
+        local tabButton = self:Create("TextButton", {
+            Size = UDim2.new(0, 80, 0, 25),
+            Position = UDim2.new(0, (#tabs - 1) * 85 + 10, 0, 5),
+            BackgroundColor3 = self.Theme.SecondaryColor,
+            Text = name,
+            TextColor3 = self.Theme.DarkText,
+            TextSize = 13,
+            Font = self.Theme.Font,
+            Parent = content
+        })
         
-        if isToggled then
-            -- Включено
-            local dotTween = TweenService:Create(toggleDot, tweenInfo, {Position = UDim2.new(0, 22, 0, 2)})
-            local switchTween = TweenService:Create(toggleSwitch, tweenInfo, {BackgroundColor3 = UILib.Theme.AccentColor})
-            dotTween:Play()
-            switchTween:Play()
-        else
-            -- Выключено
-            local dotTween = TweenService:Create(toggleDot, tweenInfo, {Position = UDim2.new(0, 2, 0, 2)})
-            local switchTween = TweenService:Create(toggleSwitch, tweenInfo, {BackgroundColor3 = Color3.fromRGB(80, 80, 80)})
-            dotTween:Play()
-            switchTween:Play()
-        end
-    end
-    
-    toggleFrame.MouseButton1Click:Connect(function()
-        isToggled = not isToggled
-        updateToggle()
-        if callback then
-            callback(isToggled)
-        end
-    end)
-    
-    updateToggle()
-    
-    return toggleFrame
-end
-
--- Выпадающий список (Dropdown)
-function UILib:CreateDropdown(parent, text, size, position, options, callback)
-    local dropdownFrame = self:CreateFrame(parent, size, position, UILib.Theme.SecondaryColor)
-    dropdownFrame.Name = "Dropdown"
-    dropdownFrame.ClipsDescendants = true
-    
-    local dropdownLabel = self:CreateTextLabel(dropdownFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0))
-    dropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local dropdownArrow = self:CreateTextLabel(dropdownFrame, "▼", UDim2.new(0, 20, 0, 20), UDim2.new(0.9, -25, 0.5, -10))
-    dropdownArrow.TextSize = 12
-    
-    local optionsFrame = self:CreateFrame(dropdownFrame, UDim2.new(1, 0, 0, 0), UDim2.new(0, 0, 1, 5), UILib.Theme.SecondaryColor)
-    optionsFrame.Visible = false
-    
-    local isOpen = false
-    local selectedOption = nil
-    
-    local function toggleDropdown()
-        isOpen = not isOpen
-        local tweenInfo = TweenInfo.new(0.3)
+        self:Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = tabButton})
         
-        if isOpen then
-            optionsFrame.Visible = true
-            local tween = TweenService:Create(optionsFrame, tweenInfo, {Size = UDim2.new(1, 0, 0, #options * 30)})
-            tween:Play()
-            dropdownArrow.Text = "▲"
-        else
-            local tween = TweenService:Create(optionsFrame, tweenInfo, {Size = UDim2.new(1, 0, 0, 0)})
-            tween:Play()
-            wait(0.3)
-            optionsFrame.Visible = false
-            dropdownArrow.Text = "▼"
-        end
-    end
-    
-    -- Создание опций
-    for i, option in ipairs(options) do
-        local optionButton = self:CreateFrame(optionsFrame, UDim2.new(1, -10, 0, 25), UDim2.new(0, 5, 0, (i-1)*30 + 5), UILib.Theme.PrimaryColor)
-        optionButton.BackgroundTransparency = 0.8
+        local tabContent = self:CreateFrame(content, UDim2.new(1, 0, 1, -35), UDim2.new(0, 0, 0, 35), self.Theme.MainColor, 1)
+        tabContent.Visible = false
         
-        local optionLabel = self:CreateTextLabel(optionButton, option, UDim2.new(1, 0, 1, 0), UDim2.new(0, 5, 0, 0))
-        optionLabel.TextXAlignment = Enum.TextXAlignment.Left
-        
-        optionButton.MouseButton1Click:Connect(function()
-            selectedOption = option
-            dropdownLabel.Text = text .. ": " .. option
-            toggleDropdown()
-            if callback then
-                callback(option)
+        tabButton.MouseButton1Click:Connect(function()
+            if currentTab then
+                currentTab.Visible = false
             end
+            tabContent.Visible = true
+            currentTab = tabContent
+            
+            -- Update tab colors
+            for _, btn in pairs(content:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    btn.BackgroundColor3 = self.Theme.SecondaryColor
+                    btn.TextColor3 = self.Theme.DarkText
+                end
+            end
+            tabButton.BackgroundColor3 = self.Theme.AccentColor
+            tabButton.TextColor3 = self.Theme.TextColor
         end)
-    end
-    
-    dropdownFrame.MouseButton1Click:toggleDropdown
-    
-    return dropdownFrame
-end
-
--- Слайдер
-function UILib:CreateSlider(parent, text, size, position, minValue, maxValue, defaultValue, callback)
-    local sliderFrame = self:CreateFrame(parent, size, position, UILib.Theme.SecondaryColor)
-    sliderFrame.Name = "Slider"
-    
-    local sliderLabel = self:CreateTextLabel(sliderFrame, text, UDim2.new(1, -10, 0, 20), UDim2.new(0, 10, 0, 0))
-    sliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local valueLabel = self:CreateTextLabel(sliderFrame, tostring(defaultValue), UDim2.new(0, 50, 0, 20), UDim2.new(1, -60, 0, 0))
-    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    
-    local track = self:CreateFrame(sliderFrame, UDim2.new(1, -20, 0, 6), UDim2.new(0, 10, 0, 30), Color3.fromRGB(80, 80, 80))
-    
-    local fill = self:CreateFrame(track, UDim2.new(0, 0, 1, 0), UDim2.new(0, 0, 0, 0), UILib.Theme.PrimaryColor)
-    fill.CornerRadius = UDim.new(1, 0)
-    
-    local handle = self:CreateFrame(track, UDim2.new(0, 16, 0, 16), UDim2.new(0, -8, 0.5, -8), UILib.Theme.TextColor)
-    handle.CornerRadius = UDim.new(1, 0)
-    
-    local isDragging = false
-    local currentValue = defaultValue or minValue
-    
-    local function updateSlider(value)
-        local normalized = (value - minValue) / (maxValue - minValue)
-        local fillSize = normalized * track.AbsoluteSize.X
         
-        fill.Size = UDim2.new(0, fillSize, 1, 0)
-        handle.Position = UDim2.new(0, fillSize - 8, 0.5, -8)
-        valueLabel.Text = tostring(math.floor(value))
-        currentValue = value
+        -- Set first tab as active
+        if not currentTab then
+            tabButton.BackgroundColor3 = self.Theme.AccentColor
+            tabButton.TextColor3 = self.Theme.TextColor
+            tabContent.Visible = true
+            currentTab = tabContent
+        end
         
-        if callback then
-            callback(value)
+        local tabElements = {}
+        
+        function tabElements:Button(text, callback)
+            local button = self:Create("TextButton", {
+                Size = UDim2.new(1, -20, 0, 35),
+                Position = UDim2.new(0, 10, 0, #tabContent:GetChildren() * 45 + 10),
+                BackgroundColor3 = self.Theme.AccentColor,
+                Text = text,
+                TextColor3 = self.Theme.TextColor,
+                TextSize = 14,
+                Font = self.Theme.Font,
+                Parent = tabContent
+            })
+            
+            self:Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = button})
+            
+            local hoverTween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20, 130, 235)})            
+            local leaveTween = TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.AccentColor})
+            
+            button.MouseEnter:Connect(function()
+                hoverTween:Play()
+            end)
+            
+            button.MouseLeave:Connect(function()
+                leaveTween:Play()
+            end)
+            
+            button.MouseButton1Click:Connect(function()
+                if callback then
+                    callback()
+                end
+            end)
+            
+            return button
         end
+        
+        function tabElements:Toggle(text, default, callback)
+            local toggleFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 30), UDim2.new(0, 10, 0, #tabContent:GetChildren() * 40 + 10), self.Theme.SecondaryColor)
+            
+            local toggleLabel = self:CreateLabel(toggleFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0))
+            
+            local toggleSwitch = self:CreateFrame(toggleFrame, UDim2.new(0, 40, 0, 20), UDim2.new(1, -50, 0.5, -10), Color3.fromRGB(60, 60, 70))
+            
+            local toggleDot = self:CreateFrame(toggleSwitch, UDim2.new(0, 16, 0, 16), UDim2.new(0, 2, 0, 2), self.Theme.TextColor)
+            self:Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleDot})
+            
+            local isToggled = default or false
+            
+            local function updateToggle()
+                if isToggled then
+                    TweenService:Create(toggleDot, TweenInfo.new(0.2), {Position = UDim2.new(0, 22, 0, 2)}):Play()
+                    TweenService:Create(toggleSwitch, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.AccentColor}):Play()
+                else
+                    TweenService:Create(toggleDot, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0, 2)}):Play()
+                    TweenService:Create(toggleSwitch, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
+                end
+            end
+            
+            toggleFrame.MouseButton1Click:Connect(function()
+                isToggled = not isToggled
+                updateToggle()
+                if callback then
+                    callback(isToggled)
+                end
+            end)
+            
+            updateToggle()
+            
+            return {
+                Set = function(self, value)
+                    isToggled = value
+                    updateToggle()
+                end,
+                Get = function(self)
+                    return isToggled
+                end
+            }
+        end
+        
+        function tabElements:Slider(text, min, max, default, callback)
+            local sliderFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 50), UDim2.new(0, 10, 0, #tabContent:GetChildren() * 55 + 10), self.Theme.SecondaryColor)
+            
+            local sliderLabel = self:CreateLabel(sliderFrame, text, UDim2.new(0.6, 0, 0, 20), UDim2.new(0, 10, 0, 5))
+            
+            local valueLabel = self:CreateLabel(sliderFrame, tostring(default), UDim2.new(0.3, 0, 0, 20), UDim2.new(0.7, -10, 0, 5))
+            valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+            
+            local track = self:CreateFrame(sliderFrame, UDim2.new(1, -20, 0, 6), UDim2.new(0, 10, 0, 30), Color3.fromRGB(50, 50, 60))
+            self:Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = track})
+            
+            local fill = self:CreateFrame(track, UDim2.new(0, 0, 1, 0), UDim2.new(0, 0, 0, 0), self.Theme.AccentColor)
+            self:Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = fill})
+            
+            local handle = self:CreateFrame(track, UDim2.new(0, 16, 0, 16), UDim2.new(0, -8, 0.5, -8), self.Theme.TextColor)
+            self:Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = handle})
+            
+            local isDragging = false
+            local currentValue = default or min
+            
+            local function updateSlider(value)
+                local normalized = (value - min) / (max - min)
+                local fillSize = math.clamp(normalized * track.AbsoluteSize.X, 0, track.AbsoluteSize.X)
+                
+                fill.Size = UDim2.new(0, fillSize, 1, 0)
+                handle.Position = UDim2.new(0, fillSize - 8, 0.5, -8)
+                valueLabel.Text = tostring(math.floor(value))
+                currentValue = value
+                
+                if callback then
+                    callback(value)
+                end
+            end
+            
+            local function onInput(input)
+                if isDragging then
+                    local relativeX = math.clamp(input.Position.X - track.AbsolutePosition.X, 0, track.AbsoluteSize.X)
+                    local normalized = relativeX / track.AbsoluteSize.X
+                    local value = min + normalized * (max - min)
+                    updateSlider(math.floor(value))
+                end
+            end
+            
+            handle.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    isDragging = true
+                end
+            end)
+            
+            handle.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    isDragging = false
+                end
+            end)
+            
+            track.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    isDragging = true
+                    onInput(input)
+                end
+            end)
+            
+            UserInputService.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement and isDragging then
+                    onInput(input)
+                end
+            end)
+            
+            updateSlider(currentValue)
+            
+            return {
+                Set = function(self, value)
+                    updateSlider(math.clamp(value, min, max))
+                end,
+                Get = function(self)
+                    return currentValue
+                end
+            }
+        end
+        
+        function tabElements:Dropdown(text, options, callback)
+            local dropdownFrame = self:CreateFrame(tabContent, UDim2.new(1, -20, 0, 35), UDim2.new(0, 10, 0, #tabContent:GetChildren() * 45 + 10), self.Theme.SecondaryColor)
+            dropdownFrame.ClipsDescendants = true
+            
+            local dropdownLabel = self:CreateLabel(dropdownFrame, text, UDim2.new(0.7, 0, 1, 0), UDim2.new(0, 10, 0, 0))
+            
+            local dropdownArrow = self:CreateLabel(dropdownFrame, "▼", UDim2.new(0, 20, 0, 20), UDim2.new(1, -25, 0.5, -10), 12)
+            dropdownArrow.TextXAlignment = Enum.TextXAlignment.Center
+            
+            local optionsFrame = self:CreateFrame(dropdownFrame, UDim2.new(1, 0, 0, 0), UDim2.new(0, 0, 1, 5), self.Theme.MainColor)
+            optionsFrame.Visible = false
+            
+            local isOpen = false
+            local selectedOption = options[1] or "Select"
+            
+            local function toggleDropdown()
+                isOpen = not isOpen
+                
+                if isOpen then
+                    optionsFrame.Visible = true
+                    TweenService:Create(optionsFrame, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, #options * 30)}):Play()
+                    dropdownArrow.Text = "▲"
+                else
+                    TweenService:Create(optionsFrame, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+                    dropdownArrow.Text = "▼"
+                    delay(0.3, function()
+                        if not isOpen then
+                            optionsFrame.Visible = false
+                        end
+                    end)
+                end
+            end
+            
+            for i, option in ipairs(options) do
+                local optionButton = self:Create("TextButton", {
+                    Size = UDim2.new(1, -10, 0, 25),
+                    Position = UDim2.new(0, 5, 0, (i-1)*30 + 5),
+                    BackgroundColor3 = self.Theme.SecondaryColor,
+                    Text = option,
+                    TextColor3 = self.Theme.TextColor,
+                    TextSize = 13,
+                    Font = self.Theme.Font,
+                    Parent = optionsFrame
+                })
+                
+                self:Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = optionButton})
+                
+                optionButton.MouseButton1Click:Connect(function()
+                    selectedOption = option
+                    dropdownLabel.Text = text .. ": " .. option
+                    isOpen = false
+                    optionsFrame.Visible = false
+                    dropdownArrow.Text = "▼"
+                    if callback then
+                        callback(option)
+                    end
+                end)
+            end
+            
+            dropdownFrame.MouseButton1Click:Connect(toggleDropdown)
+            
+            return {
+                Set = function(self, value)
+                    if table.find(options, value) then
+                        selectedOption = value
+                        dropdownLabel.Text = text .. ": " .. value
+                    end
+                end,
+                Get = function(self)
+                    return selectedOption
+                end
+            }
+        end
+        
+        function tabElements:Label(text)
+            local label = self:CreateLabel(tabContent, text, UDim2.new(1, -20, 0, 20), UDim2.new(0, 10, 0, #tabContent:GetChildren() * 30 + 10))
+            label.TextXAlignment = Enum.TextXAlignment.Center
+            return label
+        end
+        
+        return tabElements
     end
     
-    local function onInput(input)
-        if isDragging then
-            local relativeX = input.Position.X - track.AbsolutePosition.X
-            local normalized = math.clamp(relativeX / track.AbsoluteSize.X, 0, 1)
-            local value = minValue + normalized * (maxValue - minValue)
-            updateSlider(value)
-        end
-    end
-    
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = true
-        end
-    end)
-    
-    handle.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = false
-        end
-    end)
-    
-    track.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = true
-            onInput(input)
-        end
-    end)
-    
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and isDragging then
-            onInput(input)
-        end
-    end)
-    
-    updateSlider(currentValue)
-    
-    return sliderFrame
+    return tabs
 end
 
-
-
--- Функция для создания окна
-function UILib:CreateWindow(title, size, position)
-    local window = self:CreateFrame(screenGui, size, position, UILib.Theme.SecondaryColor)
-    window.Name = "Window"
+-- Telegram Invite функция
+function DeltaXAzure:TelegramInvite(inviteLink, buttonText)
+    local frame = self:CreateFrame(ScreenGui, UDim2.new(0, 300, 0, 60), UDim2.new(1, -320, 1, -80), Color3.fromRGB(0, 136, 204))
     
-    local titleBar = self:CreateFrame(window, UDim2.new(1, 0, 0, 30), UDim2.new(0, 0, 0, 0), UILib.Theme.PrimaryColor)
-    titleBar.CornerRadius = UDim.new(0, 6)
+    local icon = self:CreateLabel(frame, "✈", UDim2.new(0, 40, 1, 0), UDim2.new(0, 10, 0, 0), 20)
     
-    local titleLabel = self:CreateTextLabel(titleBar, title, UDim2.new(1, 0, 1, 0), UDim2.new(0, 10, 0, 0))
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    local textLabel = self:CreateLabel(frame, "Join our Telegram", UDim2.new(0.6, 0, 1, 0), UDim2.new(0, 45, 0, 0), 14)
     
-    local content = self:CreateFrame(window, UDim2.new(1, -20, 1, -50), UDim2.new(0, 10, 0, 40), UILib.Theme.SecondaryColor)
-    content.BackgroundTransparency = 1
+    local joinButton = self:Create("TextButton", {
+        Size = UDim2.new(0, 100, 0, 30),
+        Position = UDim2.new(0.8, -110, 0.5, -15),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        Text = buttonText or "Join",
+        TextColor3 = Color3.fromRGB(0, 136, 204),
+        TextSize = 14,
+        Font = self.Theme.Font,
+        Parent = frame
+    })
     
-    return content
+    self:Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = joinButton})
+    
+    joinButton.MouseButton1Click:Connect(function()
+        if inviteLink then
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("OpenBrowserWindow", {URL = inviteLink})
+            end)
+        end
+    end)
+    
+    return frame
 end
 
-return UILib
+-- Уведомление
+function DeltaXAzure:Notify(title, message, duration)
+    duration = duration or 5
+    
+    local notifyFrame = self:CreateFrame(ScreenGui, UDim2.new(0, 300, 0, 80), UDim2.new(1, -320, 0, 20), self.Theme.MainColor)
+    
+    local titleLabel = self:CreateLabel(notifyFrame, title, UDim2.new(1, -20, 0, 25), UDim2.new(0, 10, 0, 10), 16)
+    titleLabel.Font = Enum.Font.GothamBold
+    
+    local messageLabel = self:CreateLabel(notifyFrame, message, UDim2.new(1, -20, 0, 40), UDim2.new(0, 10, 0, 35), 14)
+    
+    -- Автоматическое закрытие
+    delay(duration, function()
+        TweenService:Create(notifyFrame, TweenInfo.new(0.5), {Position = UDim2.new(1, 300, 0, 20)}):Play()
+        wait(0.5)
+        notifyFrame:Destroy()
+    end)
+    
+    return notifyFrame
+end
+
+return DeltaXAzure
