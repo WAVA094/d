@@ -280,29 +280,7 @@ function UILib:CreateSlider(parent, text, size, position, minValue, maxValue, de
     return sliderFrame
 end
 
--- Telegram Invite
-function UILib:CreateTelegramInvite(parent, size, position, inviteLink, buttonText)
-    local telegramFrame = self:CreateFrame(parent, size, position, Color3.fromRGB(0, 136, 204))
-    
-    local icon = self:CreateTextLabel(telegramFrame, "✈", UDim2.new(0, 30, 1, 0), UDim2.new(0, 10, 0, 0))
-    icon.TextSize = 20
-    
-    local textLabel = self:CreateTextLabel(telegramFrame, "Присоединяйтесь к нашему Telegram", UDim2.new(0.6, 0, 1, 0), UDim2.new(0, 45, 0, 0))
-    textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local joinButton = self:CreateButton(telegramFrame, buttonText or "Присоединиться", UDim2.new(0, 100, 0, 25), UDim2.new(0.8, -110, 0.5, -12), function()
-        if inviteLink then
-            -- Открытие ссылки (в Roblox Studio это не сработает, но в игре будет работать)
-            pcall(function()
-                game:GetService("StarterGui"):SetCore("OpenBrowserWindow", {
-                    URL = inviteLink
-                })
-            end)
-        end
-    end)
-    
-    return telegramFrame
-end
+
 
 -- Функция для создания окна
 function UILib:CreateWindow(title, size, position)
