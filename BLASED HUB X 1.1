@@ -1,0 +1,78 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "key system",
+    Icon = "door-open", -- lucide icon
+    Author = "",
+    Folder = "GJEHYW13",
+    
+    -- ↓ This all is Optional. You can remove it.
+    Size = UDim2.fromOffset(580, 460),
+    MinSize = Vector2.new(560, 350),
+    MaxSize = Vector2.new(850, 560),
+    Transparent = true,
+    Theme = "Red",
+    Resizable = true,
+    SideBarWidth = 200,
+    BackgroundImageTransparency = 0,9,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    
+    -- ↓ Optional. You can remove it.
+    User = {
+        Enabled = true,
+        Anonymous = true,
+        Callback = function()
+            print("clicked")
+        end,
+    },
+    
+    -- ↓ Key system configuration
+    KeySystem = { 
+        -- ↓ Optional. You can remove it.
+        Key = { "OEUDHW94GR82", "5678" },
+        
+        Note = "Example Key System.",
+        
+        -- ↓ Optional. You can remove it.
+        Thumbnail = {
+            Image = "rbxassetid://140626083677696",
+            Title = "",
+        },
+        
+        -- ↓ Optional. You can remove it.
+        URL = "https://go.linkify.ru/2CwO",
+        
+        -- ↓ Optional. You can remove it.
+        SaveKey = false, -- automatically save and load the key.
+    },
+})
+
+Window:EditOpenButton({
+    Title = "Open Example UI",
+    Icon = "zap",
+    CornerRadius = UDim.new(0,20),
+    StrokeThickness = 2,
+    Color = ColorSequence.new( -- gradient
+        Color3.fromHex("4b09db"), 
+        Color3.fromHex("b809db")
+    ),
+    OnlyMobile = false,
+    Enabled = true,
+    Draggable = true,
+})
+
+local Tab = Window:Tab({
+    Title = "main",
+    Icon = "zap", -- optional
+    Locked = false,
+})
+
+local Button = Tab:Button({
+    Title = "Activate the script",
+    Desc = "candy auto farm",
+    Locked = false,
+    Callback = function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/vertex-peak/vertex/refs/heads/main/loadstring'))()
+    end
+})
